@@ -1,52 +1,66 @@
 #!/bin/bash
 
-KEY_PATH=$(pwd)/private.key
-SCRIPT_PATH=$(pwd)/scripts
-CONFIG_PATH=$(pwd)/configs
-REPO_DIR=$(pwd)/releases
-OPENWRT_VER=23.05.3
+ROOT_DIR=$(pwd)
+REPO_DIR=$ROOT_DIR/releases
+OPENWRT_VER_LIST=(23.05.3)
 
 rm -r $REPO_DIR
 
 git clone https://github.com/openwrt/openwrt.git
 cd openwrt
-git checkout v${OPENWRT_VER}
 
-# Define the Makefile path
-MAKEFILE="package/network/services/odhcpd/Makefile"
+function build_stage() {
+	for script in "$ROOT_DIR/stages"/*; do
+		if [[ -f "$script" && -x "$script" ]]; then
+			echo "$script"
+			"$script" "$@"
+		fi
+	done
+}
 
-# Replace PKG_SOURCE_URL line
-sed -i 's|^PKG_SOURCE_URL=.*|PKG_SOURCE_URL=https://github.com/rikka0w0/odhcpd.git|' "$MAKEFILE"
+for OPENWRT_VER in "${OPENWRT_VER_LIST[@]}"; do
+	# Discard changes in tracked files
+	git reset --hard
 
-# Update PKG_SOURCE_DATE
-sed -i 's|\(PKG_SOURCE_DATE:=\).*|\12025-01-06|' "$MAKEFILE"
+	git checkout v${OPENWRT_VER}
 
-# Update PKG_SOURCE_VERSION
-sed -i 's|\(PKG_SOURCE_VERSION:=\).*|\1e0c6642e306ac4cfae879660b0acb901552f16d3|' "$MAKEFILE"
+	for CONFIG_FILE in "$ROOT_DIR/configs"/*; do
+		CONFIG_FILE_NAME=$(basename "$CONFIG_FILE")
+		PACKAGE_TYPE="${CONFIG_FILE_NAME%.*}"
+		PACKAGE_REPO=$REPO_DIR/$OPENWRT_VER/packages/$PACKAGE_TYPE
 
-# Update PKG_MIRROR_HASH
-sed -i 's|\(PKG_MIRROR_HASH:=\).*|\1361efbf7110601e769ceed5c74b2e9f663b2fe265e6fb39c9fa2fc83a0b2b406|' "$MAKEFILE"
+		echo "Build for config: ${CONFIG_FILE}"
+		echo "Repo: ${PACKAGE_REPO}"
 
-for CONFIG_FILE in "${CONFIG_PATH}"/*; do
-	CONFIG_FILE_NAME=$(basename "$CONFIG_FILE")
-	PACKAGE_TYPE="${CONFIG_FILE_NAME%.*}"
-	PACKAGE_REPO=$REPO_DIR/$OPENWRT_VER/packages/$PACKAGE_TYPE
+		cp ${CONFIG_FILE} .config -v
 
-	echo "Build for config: ${CONFIG_FILE}"
-	echo "Repo: ${PACKAGE_REPO}"
+		build_stage PATCH
 
-	cp ${CONFIG_FILE} .config -v
-	make tools/compile -j$(nproc)
-	make toolchain/compile -j$(nproc)
-	make package/network/services/odhcpd/{clean,download,compile} -j$(nproc)
+		make tools/compile -j$(nproc)
+		make toolchain/compile -j$(nproc)
+		make package/network/services/odhcpd/{clean,download,compile} -j$(nproc)
 
-	mkdir -p $PACKAGE_REPO
-	cp bin/packages/$PACKAGE_TYPE/base/odhcpd*.ipk $PACKAGE_REPO -v
+		mkdir -p $PACKAGE_REPO
+		build_stage DEPLOY $PACKAGE_TYPE $PACKAGE_REPO
+	done
 done
 
 # Make the repo
-cd $SCRIPT_PATH
+cd $ROOT_DIR/scripts
 find $REPO_DIR -type f -name "index.html" -delete
 
-./make-index-and-sign.sh -s $KEY_PATH $REPO_DIR
-./make-index-html.sh $REPO_DIR
+./make-index-and-sign.sh -s $ROOT_DIR/private.key $REPO_DIR
+
+cp $ROOT_DIR/public.key $REPO_DIR
+cp $ROOT_DIR/README.md $REPO_DIR
+HOME_PAGE=$REPO_DIR/README.md
+echo '' >> $HOME_PAGE
+echo '# OpenWrt Versions' >> $HOME_PAGE
+
+INDEX=1
+for OPENWRT_VER in "${OPENWRT_VER_LIST[@]}"; do
+	./make-index-html.sh $REPO_DIR/$OPENWRT_VER
+
+	echo "$INDEX. [$OPENWRT_VER]($OPENWRT_VER)" >> $HOME_PAGE
+	((INDEX++))
+done
