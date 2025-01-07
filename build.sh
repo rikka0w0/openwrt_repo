@@ -1,6 +1,6 @@
 #!/bin/bash
 
-KEY_PATH=/home/rikka/.ssh/openwrt_repo.pri
+KEY_PATH=$(pwd)/private.key
 SCRIPT_PATH=$(pwd)/scripts
 CONFIG_PATH=$(pwd)/configs
 REPO_DIR=$(pwd)/releases
