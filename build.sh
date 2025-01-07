@@ -31,7 +31,7 @@ for CONFIG_FILE in "${CONFIG_PATH}"/*; do
 	CONFIG_FILE_NAME=$(basename "$CONFIG_FILE")
 	PACKAGE_TYPE="${CONFIG_FILE_NAME%.*}"
 	PACKAGE_REPO=$REPO_DIR/$OPENWRT_VER/packages/$PACKAGE_TYPE
-	
+
 	echo "Build for config: ${CONFIG_FILE}"
 	echo "Repo: ${PACKAGE_REPO}"
 
