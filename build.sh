@@ -61,13 +61,15 @@ for OPENWRT_VER in "${OPENWRT_VER_LIST[@]}"; do
 
 		TARGET_LIST=($(get_sub_dirs "$ROOT_DIR/versions/$OPENWRT_VER/$ARCH"))
 
+		# Build targets
 		for TARGET in "${TARGET_LIST[@]}"; do
 			TARGET_SCRIPT="$ROOT_DIR/versions/$OPENWRT_VER/$ARCH/$TARGET/target.sh"
 			$TARGET_SCRIPT "$ROOT_DIR" "$OPENWRT_VER" "$ARCH" "$TARGET"
 		done
 
 		# Build packages
-		$ROOT_DIR/versions/$OPENWRT_VER/packages.sh
+		echo "Building packages for ${OPENWRT_VER}, ${ARCH}"
+		$ROOT_DIR/versions/$OPENWRT_VER/packages.sh "$ROOT_DIR" "$OPENWRT_VER" "$ARCH"
 	done
 done
 

@@ -12,8 +12,11 @@ OPENWRT_VER=$2
 ARCH=$3
 TARGET=$4
 
-make world -j$(nproc)
+cp -v $ROOT_DIR/versions/$OPENWRT_VER/$ARCH/$TARGET/.config .config
+make -j$(nproc)
 
 DST_DIR=$ROOT_DIR/releases/$OPENWRT_VER/targets/ramips/mt7620
+mkdir -p $DST_DIR
+
 echo $DST_DIR
-#cp -v bin/target/ramips/mt7620 $PACKAGE_REPO -v
+cp -rv bin/targets/ramips/mt7620/* $DST_DIR -v
