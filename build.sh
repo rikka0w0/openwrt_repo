@@ -2,15 +2,32 @@
 
 ROOT_DIR=$(pwd)
 REPO_DIR=$ROOT_DIR/releases
+OPENWRT_ROOT=$ROOT_DIR/openwrt
 OPENWRT_VER_LIST=(23.05.3)
 
 rm -r $REPO_DIR
 
-git clone https://github.com/openwrt/openwrt.git
-cd openwrt
+if [ -d "$OPENWRT_ROOT" ]; then
+	echo 'Found existing OpenWrt repo clone'
+
+	# OpenWrt repo exists
+	cd "$OPENWRT_ROOT"
+
+	# Discard changes in tracked files
+	git reset --hard
+
+	# Remove all untrack files
+	git clean -fd
+
+	# Fetch all tags
+	git fetch --tags
+else
+	git clone https://github.com/openwrt/openwrt.git "$OPENWRT_ROOT"
+	cd "$OPENWRT_ROOT"
+fi
 
 function build_stage() {
-	for script in "$ROOT_DIR/stages"/*; do
+	for script in "$ROOT_DIR/packages"/*; do
 		if [[ -f "$script" && -x "$script" ]]; then
 			echo "$script"
 			"$script" "$@"
@@ -19,6 +36,8 @@ function build_stage() {
 }
 
 for OPENWRT_VER in "${OPENWRT_VER_LIST[@]}"; do
+	echo "Building ${OPENWRT_VER}"
+
 	# Discard changes in tracked files
 	git reset --hard
 
@@ -38,7 +57,8 @@ for OPENWRT_VER in "${OPENWRT_VER_LIST[@]}"; do
 
 		make tools/compile -j$(nproc)
 		make toolchain/compile -j$(nproc)
-		make package/network/services/odhcpd/{clean,download,compile} -j$(nproc)
+
+		build_stage BUILD
 
 		mkdir -p $PACKAGE_REPO
 		build_stage DEPLOY $PACKAGE_TYPE $PACKAGE_REPO
@@ -52,8 +72,8 @@ find $REPO_DIR -type f -name "index.html" -delete
 ./make-index-and-sign.sh -s $ROOT_DIR/private.key $REPO_DIR
 
 cp $ROOT_DIR/public.key $REPO_DIR
-cp $ROOT_DIR/README.md $REPO_DIR
-HOME_PAGE=$REPO_DIR/README.md
+cp $ROOT_DIR/README.md $REPO_DIR/index.md
+HOME_PAGE=$REPO_DIR/index.md
 echo '' >> $HOME_PAGE
 echo '# OpenWrt Versions' >> $HOME_PAGE
 

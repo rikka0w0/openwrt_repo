@@ -23,6 +23,10 @@ case "$1" in
 		sed -i 's|\(PKG_MIRROR_HASH:=\).*|\1361efbf7110601e769ceed5c74b2e9f663b2fe265e6fb39c9fa2fc83a0b2b406|' "$MAKEFILE"
 		;;
 
+	"BUILD")
+		make package/network/services/odhcpd/{clean,download,compile} -j$(nproc)
+		;;
+
 	"DEPLOY")
 		PACKAGE_TYPE=$2
 		PACKAGE_REPO=$3

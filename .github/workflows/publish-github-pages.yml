@@ -30,6 +30,11 @@ jobs:
           ./build.sh
           rm private.key
 
+      - name: Jekyll
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./releases
+
       - name: Upload static files as artifact
         id: deployment
         uses: actions/upload-pages-artifact@v3 # or specific "vX.X.X" version tag for this action
