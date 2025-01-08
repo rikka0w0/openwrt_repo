@@ -7,18 +7,13 @@
 # Get the location of this script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# $1 is the build stage
-case "$1" in
-	"BUILD")
-		make world -j$(nproc)
-		;;
+ROOT_DIR=$1
+OPENWRT_VER=$2
+ARCH=$3
+TARGET=$4
 
-	"DEPLOY")
-		ROOT_DIR=$2
-		OPENWRT_VER=$3
-		ARCH=$4
-		DST_DIR=$ROOT_DIR/releases/$OPENWRT_VER/targets/ramips/mt7620
-		echo "Deploy to $ROOT_DIR/releases/$OPENWRT_VER/targets/ramips/mt7620"
-		# cp bin/packages/$PACKAGE_TYPE/base/odhcpd*.ipk $PACKAGE_REPO -v
-		;;
-esac
+make world -j$(nproc)
+
+DST_DIR=$ROOT_DIR/releases/$OPENWRT_VER/targets/ramips/mt7620
+echo $DST_DIR
+#cp -v bin/target/ramips/mt7620 $PACKAGE_REPO -v

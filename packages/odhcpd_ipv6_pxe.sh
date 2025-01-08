@@ -27,11 +27,8 @@ case "$1" in
 
 	"BUILD")
 		make package/network/services/odhcpd/{clean,download,compile} -j$(nproc)
-		;;
-
-	"DEPLOY")
-		PACKAGE_TYPE=$2
+		ARCH=$2
 		PACKAGE_REPO=$3
-		cp bin/packages/$PACKAGE_TYPE/base/odhcpd*.ipk $PACKAGE_REPO -v
+		cp bin/packages/$ARCH/base/odhcpd*.ipk $PACKAGE_REPO -v
 		;;
 esac

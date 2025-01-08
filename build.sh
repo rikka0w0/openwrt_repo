@@ -49,6 +49,7 @@ for OPENWRT_VER in "${OPENWRT_VER_LIST[@]}"; do
 
 	git checkout v${OPENWRT_VER}
 
+	# Apply all file patches to the repo
 	PATCH_LIST=($(find $ROOT_DIR/versions/$OPENWRT_VER -name patch.sh))
 	for PATCH_SCRIPT in "${PATCH_LIST[@]}"; do
 		echo "Applying patch ${PATCH_SCRIPT}"
@@ -58,14 +59,15 @@ for OPENWRT_VER in "${OPENWRT_VER_LIST[@]}"; do
 	for ARCH in "${ARCH_LIST[@]}"; do
 		echo "Building ${OPENWRT_VER} for ${ARCH} at ${OPENWRT_ROOT}"
 
-		TASK_LIST=($(get_sub_dirs "$ROOT_DIR/versions/$OPENWRT_VER/$ARCH"))
+		TARGET_LIST=($(get_sub_dirs "$ROOT_DIR/versions/$OPENWRT_VER/$ARCH"))
 
-		for TASK in "${TASK_LIST[@]}"; do
-			echo "Running task $TASK BUILD"
-			TASK_SCRIPT="$ROOT_DIR/versions/$OPENWRT_VER/$ARCH/$TASK/target.sh"
-			#$TASK_SCRIPT BUILD "$ROOT_DIR"
-			#$TASK_SCRIPT DEPLOY "$ROOT_DIR" "$OPENWRT_VER" "$ARCH"
+		for TARGET in "${TARGET_LIST[@]}"; do
+			TARGET_SCRIPT="$ROOT_DIR/versions/$OPENWRT_VER/$ARCH/$TARGET/target.sh"
+			$TARGET_SCRIPT "$ROOT_DIR" "$OPENWRT_VER" "$ARCH" "$TARGET"
 		done
+
+		# Build packages
+		$ROOT_DIR/versions/$OPENWRT_VER/packages.sh
 	done
 done
 

@@ -6,4 +6,4 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$1"
 
-find "$ROOT_DIR/packages/" -name "*.sh" -exec sh -c 'sh "$0" PATCH' {} \;
+$ROOT_DIR/packages/odhcpd_ipv6_pxe.sh PATCH
