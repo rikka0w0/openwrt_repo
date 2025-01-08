@@ -72,8 +72,9 @@ find $REPO_DIR -type f -name "index.html" -delete
 ./make-index-and-sign.sh -s $ROOT_DIR/private.key $REPO_DIR
 
 cp $ROOT_DIR/public.key $REPO_DIR
-cp $ROOT_DIR/README.md $REPO_DIR/index.md
+
 HOME_PAGE=$REPO_DIR/index.md
+cp $ROOT_DIR/README.md $HOME_PAGE
 echo '' >> $HOME_PAGE
 echo '# OpenWrt Versions' >> $HOME_PAGE
 
