@@ -2,40 +2,46 @@
 
 ROOT_DIR=$(pwd)
 REPO_DIR=$ROOT_DIR/releases
-OPENWRT_ROOT=$ROOT_DIR/openwrt
-OPENWRT_VER_LIST=(23.05.3)
+
+get_sub_dirs() {
+	local sub_dirs=()
+
+	# Find all OpenWrt versions
+	while IFS= read -r dir; do
+		sub_dirs+=("$(basename "$dir")")
+	done < <(find "$1" -maxdepth 1 -mindepth 1 -type d)
+
+	# Return the array as a space-separated string
+	echo "${sub_dirs[@]}"
+}
+
+OPENWRT_VER_LIST=($(get_sub_dirs "$ROOT_DIR/versions"))
 
 rm -r $REPO_DIR
 
-if [ -d "$OPENWRT_ROOT" ]; then
-	echo 'Found existing OpenWrt repo clone'
-
-	# OpenWrt repo exists
-	cd "$OPENWRT_ROOT"
-
-	# Discard changes in tracked files
-	git reset --hard
-
-	# Remove all untrack files
-	git clean -fd
-
-	# Fetch all tags
-	git fetch --tags
-else
-	git clone https://github.com/openwrt/openwrt.git "$OPENWRT_ROOT"
-	cd "$OPENWRT_ROOT"
-fi
-
-function build_stage() {
-	for script in "$ROOT_DIR/packages"/*; do
-		if [[ -f "$script" && -x "$script" ]]; then
-			echo "$script"
-			"$script" "$@"
-		fi
-	done
-}
-
 for OPENWRT_VER in "${OPENWRT_VER_LIST[@]}"; do
+	OPENWRT_ROOT=$ROOT_DIR/openwrt-$OPENWRT_VER
+	ARCH_LIST=($(get_sub_dirs "$ROOT_DIR/versions/$OPENWRT_VER"))
+
+	if [ -d "$OPENWRT_ROOT" ]; then
+		echo 'Found existing OpenWrt repo clone'
+
+		# OpenWrt repo exists
+		cd "$OPENWRT_ROOT"
+
+		# Discard changes in tracked files
+		git reset --hard
+
+		# Remove all untrack files
+		git clean -fd
+
+		# Fetch all tags
+		git fetch --tags
+	else
+		git clone https://github.com/openwrt/openwrt.git "$OPENWRT_ROOT"
+		cd "$OPENWRT_ROOT"
+	fi
+
 	echo "Building ${OPENWRT_VER}"
 
 	# Discard changes in tracked files
@@ -43,25 +49,23 @@ for OPENWRT_VER in "${OPENWRT_VER_LIST[@]}"; do
 
 	git checkout v${OPENWRT_VER}
 
-	for CONFIG_FILE in "$ROOT_DIR/configs"/*; do
-		CONFIG_FILE_NAME=$(basename "$CONFIG_FILE")
-		PACKAGE_TYPE="${CONFIG_FILE_NAME%.*}"
-		PACKAGE_REPO=$REPO_DIR/$OPENWRT_VER/packages/$PACKAGE_TYPE
+	PATCH_LIST=($(find $ROOT_DIR/versions/$OPENWRT_VER -name patch.sh))
+	for PATCH_SCRIPT in "${PATCH_LIST[@]}"; do
+		echo "Applying patch ${PATCH_SCRIPT}"
+		${PATCH_SCRIPT} "$ROOT_DIR"
+	done
 
-		echo "Build for config: ${CONFIG_FILE}"
-		echo "Repo: ${PACKAGE_REPO}"
+	for ARCH in "${ARCH_LIST[@]}"; do
+		echo "Building ${OPENWRT_VER} for ${ARCH} at ${OPENWRT_ROOT}"
 
-		cp ${CONFIG_FILE} .config -v
+		TASK_LIST=($(get_sub_dirs "$ROOT_DIR/versions/$OPENWRT_VER/$ARCH"))
 
-		build_stage PATCH
-
-		make tools/compile -j$(nproc)
-		make toolchain/compile -j$(nproc)
-
-		build_stage BUILD
-
-		mkdir -p $PACKAGE_REPO
-		build_stage DEPLOY $PACKAGE_TYPE $PACKAGE_REPO
+		for TASK in "${TASK_LIST[@]}"; do
+			echo "Running task $TASK BUILD"
+			TASK_SCRIPT="$ROOT_DIR/versions/$OPENWRT_VER/$ARCH/$TASK/target.sh"
+			#$TASK_SCRIPT BUILD "$ROOT_DIR"
+			#$TASK_SCRIPT DEPLOY "$ROOT_DIR" "$OPENWRT_VER" "$ARCH"
+		done
 	done
 done
 

@@ -7,6 +7,8 @@
 # $1 is the build stage
 case "$1" in
 	"PATCH")
+		echo "Add IPv6 PxE support to odhcpd"
+
 		# Define the Makefile path
 		MAKEFILE="package/network/services/odhcpd/Makefile"
 
