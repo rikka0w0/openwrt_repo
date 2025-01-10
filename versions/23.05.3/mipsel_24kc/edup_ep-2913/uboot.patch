@@ -1,0 +1,197 @@
+diff --git a/arch/mips/dts/Makefile b/arch/mips/dts/Makefile
+index 14fbce597b9e..9377b06df51b 100644
+--- a/arch/mips/dts/Makefile
++++ b/arch/mips/dts/Makefile
+@@ -1,2 +1,3 @@
+ # SPDX-License-Identifier: GPL-2.0+
+
++dtb-$(CONFIG_BOARD_HUAWEI_NEW_BOARD) += huawei,new_board.dtb
+diff --git a/arch/mips/dts/mediatek,edup_ep-2913.dts b/arch/mips/dts/mediatek,edup_ep-2913.dts
+new file mode 100644
+index 000000000000..ae638dee222b
+--- /dev/null
++++ b/arch/mips/dts/mediatek,edup_ep-2913.dts
+@@ -0,0 +1,64 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2020 MediaTek Inc.
++ *
++ * Author: Weijie Gao <weijie.gao@mediatek.com>
++ */
++
++/dts-v1/;
++
++#include <dt-bindings/gpio/gpio.h>
++#include "mt7620.dtsi"
++
++/ {
++	compatible = "mediatek,edup_ep-2913", "mediatek,mt7620-soc";
++	model = "EDUP EP-2913";
++
++	aliases {
++		serial0 = &uartlite;
++		spi0 = &spi0;
++	};
++
++	chosen {
++		stdout-path = &uartlite;
++	};
++};
++
++&uartlite {
++	status = "okay";
++};
++
++&pinctrl {
++	state_default: pin_state {
++		pleds {
++			groups = "ephy led", "wled";
++			function = "led";
++		};
++
++		gpios {
++			groups = "uartf";
++			function = "gpio";
++		};
++	};
++};
++
++&spi0 {
++	status = "okay";
++	num-cs = <2>;
++
++	spi-flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "jedec,spi-nor";
++		spi-max-frequency = <48000000>;
++		reg = <0>;
++	};
++};
++
++&eth {
++	status = "okay";
++
++	port4 {
++		phy-addr = <4>;
++	};
++};
+diff --git a/arch/mips/mach-mtmips/mt7620/Kconfig b/arch/mips/mach-mtmips/mt7620/Kconfig
+index 398c7c6a9486..62f31ce3feb0 100644
+--- a/arch/mips/mach-mtmips/mt7620/Kconfig
++++ b/arch/mips/mach-mtmips/mt7620/Kconfig
+@@ -1,2 +1,10 @@
+
+ if SOC_MT7620
++
++config BOARD_EDUP_EP2913
++       bool "EDUP EP-2913"
++       help
++         A Wifi range extender with one 100Mbps port (Internal FE).
++         The stock board has 32 MiB DDR1 RAM and 4 MiB SPI flash.
++         This profile has been tested to support 64 MiB of DDR1 RAM.
++         The RAM installed is NP25D3216512K-5.
+diff --git a/configs/edup_ep-2913_defconfig b/configs/edup_ep-2913_defconfig
+new file mode 100644
+index 000000000000..68e84e9fbcfb
+--- /dev/null
++++ b/configs/edup_ep-2913_defconfig
+@@ -0,0 +1,98 @@
++CONFIG_MIPS=y
++CONFIG_SKIP_LOWLEVEL_INIT=y
++CONFIG_SYS_MALLOC_LEN=0x100000
++CONFIG_SPL_LIBCOMMON_SUPPORT=y
++CONFIG_SPL_LIBGENERIC_SUPPORT=y
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_ENV_SIZE=0x1000
++CONFIG_ENV_OFFSET=0x30000
++CONFIG_ENV_SECT_SIZE=0x10000
++CONFIG_DEFAULT_DEVICE_TREE="mediatek,edup_ep-2913"
++CONFIG_SPL_SERIAL=y
++CONFIG_BAUDRATE=57600
++CONFIG_SPL_SYS_MALLOC_F_LEN=0x40000
++CONFIG_SPL_BSS_START_ADDR=0x80000000
++CONFIG_SPL_BSS_MAX_SIZE=0x10000
++CONFIG_SPL=y
++CONFIG_DEBUG_UART_BASE=0xb0000c00
++CONFIG_DEBUG_UART_CLOCK=40000000
++CONFIG_SYS_LOAD_ADDR=0xbc050000
++CONFIG_ARCH_MTMIPS=y
++CONFIG_BOARD_EDUP_EP2913=y
++CONFIG_SYS_MIPS_TIMER_FREQ=290000000
++CONFIG_MIPS_CACHE_SETUP=y
++CONFIG_MIPS_CACHE_DISABLE=y
++CONFIG_RESTORE_EXCEPTION_VECTOR_BASE=y
++CONFIG_MIPS_BOOT_FDT=y
++CONFIG_DEBUG_UART=y
++CONFIG_FIT=y
++CONFIG_SYS_BOOTM_LEN=0x1000000
++# CONFIG_ARCH_FIXUP_FDT_MEMORY is not set
++CONFIG_SYS_MALLOC_BOOTPARAMS=y
++CONFIG_SPL_MAX_SIZE=0x10000
++CONFIG_SPL_SYS_MALLOC_SIMPLE=y
++CONFIG_SPL_NOR_SUPPORT=y
++# CONFIG_CMD_ELF is not set
++# CONFIG_CMD_XIMG is not set
++# CONFIG_CMD_CRC32 is not set
++# CONFIG_CMD_DM is not set
++CONFIG_CMD_GPIO=y
++# CONFIG_CMD_LOADS is not set
++CONFIG_CMD_MMC=n
++CONFIG_CMD_SPI=y
++CONFIG_CMD_USB=n
++CONFIG_CMD_MII=y
++# CONFIG_CMD_MDIO is not set
++CONFIG_CMD_FAT=n
++CONFIG_CMD_FS_GENERIC=n
++# CONFIG_SPL_DOS_PARTITION is not set
++# CONFIG_ISO_PARTITION is not set
++CONFIG_EFI_PARTITION=n
++# CONFIG_SPL_EFI_PARTITION is not set
++CONFIG_OF_SPL_REMOVE_PROPS="pinctrl-0 pinctrl-names clocks clock-names interrupt-parent interrupts resets reset-names"
++CONFIG_ENV_IS_IN_SPI_FLASH=y
++CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_SPL_DM=y
++# CONFIG_SIMPLE_BUS is not set
++# CONFIG_SPL_SIMPLE_BUS is not set
++CONFIG_GPIO_HOG=y
++# CONFIG_INPUT is not set
++CONFIG_MMC=n
++# CONFIG_MMC_QUIRKS is not set
++# CONFIG_MMC_HW_PARTITIONING is not set
++CONFIG_MMC_MTK=n
++CONFIG_SPI_FLASH_SFDP_SUPPORT=y
++CONFIG_SPI_FLASH_EON=y
++CONFIG_SPI_FLASH_GIGADEVICE=y
++CONFIG_SPI_FLASH_ISSI=y
++CONFIG_SPI_FLASH_MACRONIX=y
++CONFIG_SPI_FLASH_SPANSION=y
++CONFIG_SPI_FLASH_STMICRO=y
++CONFIG_SPI_FLASH_WINBOND=y
++CONFIG_SPI_FLASH_XMC=y
++CONFIG_MT7620_ETH=y
++CONFIG_PHY=y
++CONFIG_MT7620_USB_PHY=n
++CONFIG_SPECIFY_CONSOLE_INDEX=y
++CONFIG_DEBUG_UART_SHIFT=2
++CONFIG_SPI=y
++CONFIG_MT7620_SPI=y
++CONFIG_USB=n
++CONFIG_USB_EHCI_HCD=n
++CONFIG_USB_EHCI_GENERIC=n
++CONFIG_LZMA=y
++CONFIG_SPL_LZMA=y
++
++
++CONFIG_CMD_PING=y
++CONFIG_CMD_CONFIG=y
++CONFIG_CMD_TFTPSRV=y
++CONFIG_CMD_WGET=y
++CONFIG_USE_IPADDR=y
++CONFIG_IPADDR="192.168.1.1"
++CONFIG_USE_SERVERIP=y
++CONFIG_SERVERIP="192.168.1.2"
++
++CONFIG_USE_BOOTCOMMAND=y
++CONFIG_BOOTCOMMAND="bootm"
